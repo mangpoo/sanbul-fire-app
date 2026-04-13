@@ -1,0 +1,1 @@
+web: gunicorn sanbul-pwa-flask:app
