@@ -13,7 +13,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 np.random.seed(42)
 
-# ── 데이터 로드 및 전처리 파이프라인 재구성 ──────────────────────
+# ── 데이터 로드 및 전처리 파이프라인 재구성 ──
 fires_raw = pd.read_csv("./sanbul2district-divby100.csv", sep=",")
 fires_raw["burned_area"] = np.log(fires_raw["burned_area"] + 1)
 
@@ -33,10 +33,16 @@ full_pipeline = ColumnTransformer([
 ])
 full_pipeline.fit(fires_tr)
 
-# ── 저장된 모델 로드 ───────────────────────────────────────────
-model = keras.models.load_model('fires_model.h5')
+# ── 모델 lazy loading ──
+model = None
 
-# ── Flask 앱 설정 ──────────────────────────────────────────────
+def get_model():
+    global model
+    if model is None:
+        model = keras.models.load_model('fires_model.h5')
+    return model
+
+# ── Flask 앱 ──
 app = Flask(__name__)
 
 @app.route('/')
@@ -47,31 +53,36 @@ def index():
 @app.route('/prediction', methods=['GET', 'POST'])
 def lab():
     if request.method == 'POST':
-        longitude      = float(request.form['longitude'])
-        latitude       = float(request.form['latitude'])
-        month          = request.form['month']
-        day            = request.form['day']
-        avg_temp       = float(request.form['avg_temp'])
-        max_temp       = float(request.form['max_temp'])
-        max_wind_speed = float(request.form['max_wind_speed'])
-        avg_wind       = float(request.form['avg_wind'])
+        try:
+            longitude      = float(request.form['longitude'])
+            latitude       = float(request.form['latitude'])
+            month          = request.form['month']
+            day            = request.form['day']
+            avg_temp       = float(request.form['avg_temp'])
+            max_temp       = float(request.form['max_temp'])
+            max_wind_speed = float(request.form['max_wind_speed'])
+            avg_wind       = float(request.form['avg_wind'])
 
-        input_data = pd.DataFrame([{
-            'longitude'     : longitude,
-            'latitude'      : latitude,
-            'month'         : month,
-            'day'           : day,
-            'avg_temp'      : avg_temp,
-            'max_temp'      : max_temp,
-            'max_wind_speed': max_wind_speed,
-            'avg_wind'      : avg_wind
-        }])
+            input_data = pd.DataFrame([{
+                'longitude'     : longitude,
+                'latitude'      : latitude,
+                'month'         : month,
+                'day'           : day,
+                'avg_temp'      : avg_temp,
+                'max_temp'      : max_temp,
+                'max_wind_speed': max_wind_speed,
+                'avg_wind'      : avg_wind
+            }])
 
-        input_prepared = full_pipeline.transform(input_data)
-        pred_log  = model.predict(input_prepared)[0][0]
-        pred_area = max(0, round(float(np.expm1(pred_log)), 2))
+            input_prepared = full_pipeline.transform(input_data)
+            m = get_model()
+            pred_log  = m.predict(input_prepared)[0][0]
+            pred_area = max(0, round(float(np.expm1(pred_log)), 2))
 
-        return render_template('result.html', prediction=pred_area)
+            return render_template('result.html', prediction=pred_area)
+
+        except Exception as e:
+            return f"오류 발생: {str(e)}", 500
 
     return render_template('prediction.html')
 
