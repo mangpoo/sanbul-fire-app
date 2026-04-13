@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow import keras
 print("TensorFlow version:", tf.__version__)
-print("Keras version:", keras.__version__)
 
 import numpy as np
 import pandas as pd
@@ -77,4 +76,6 @@ def lab():
     return render_template('prediction.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
