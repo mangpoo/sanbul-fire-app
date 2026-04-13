@@ -1,1 +1,1 @@
-web: gunicorn sanbul-pwa-flask:app
+web: gunicorn sanbul-pwa-flask:app --bind 0.0.0.0:$PORT
