@@ -34,7 +34,7 @@ full_pipeline = ColumnTransformer([
 full_pipeline.fit(fires_tr)
 
 # ── 저장된 모델 로드 ───────────────────────────────────────────
-model = keras.models.load_model('fires_model.keras')
+model = keras.models.load_model('fires_model.h5')
 
 # ── Flask 앱 설정 ──────────────────────────────────────────────
 app = Flask(__name__)

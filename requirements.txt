@@ -4,3 +4,4 @@ pandas
 numpy
 tensorflow-cpu==2.15.0
 gunicorn
+h5py
